@@ -51,7 +51,7 @@ public class EmpController {
 		
 		
 		emp.setDept(dept);//emp와 dept 합체(조인)
-		int result = empService.regist(emp);
+		int result = mybatisEmpService.regist(emp);
 		logger.debug(""+result);
 		return "redirect:/emp/list";
 	}
