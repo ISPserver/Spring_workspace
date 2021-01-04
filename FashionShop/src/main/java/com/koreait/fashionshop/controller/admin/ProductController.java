@@ -1,8 +1,11 @@
 package com.koreait.fashionshop.controller.admin;
 
 import java.io.File;
+
 import java.io.IOException;
 import java.util.List;
+
+import javax.servlet.ServletContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.koreait.fashionshop.common.FileManager;
@@ -22,20 +26,29 @@ import com.koreait.fashionshop.model.product.service.TopCategoryService;
 
 //관리자 모드에서의 상품에 대한 요청 처리
 @Controller
-public class ProductController {
+public class ProductController implements ServletContextAware{
 	private static final Logger logger=LoggerFactory.getLogger(ProductController.class);
 	
 	@Autowired
-	private TopCategoryService topCategoryService;
-	
+	private TopCategoryService topCategoryService;	
 	@Autowired
-	private SubCategoryService subCategoryService;
-	
+	private SubCategoryService subCategoryService;	
 	@Autowired
-	private ProductService productService;
-	
+	private ProductService productService;	
 	@Autowired
 	private FileManager fileManager;
+	//ServletContext는 getRealPath() 사용 위해 선언
+	private ServletContext servletContext;
+	
+	@Override
+	public void setServletContext(ServletContext servletContext) {
+		this.servletContext = servletContext;
+		//이 타이밍을 놓치지 말고, 실제 물리적 경로를 FileManager에 대입하기
+		fileManager.setSaveBasicDir(servletContext.getRealPath(fileManager.getSaveBasicDir()));
+		fileManager.setSaveAddonDir(servletContext.getRealPath(fileManager.getSaveAddonDir()));
+		
+		logger.debug(fileManager.getSaveBasicDir());		
+	}
 	
 	//상위카테고리 가져오기 
 	@RequestMapping(value="/admin/product/registform", method=RequestMethod.GET)
@@ -112,14 +125,25 @@ public class ProductController {
 	
 	//상품 등록 
 	@RequestMapping(value="/admin/product/regist", method=RequestMethod.POST)
+	@ResponseBody
 	public String registProduct(Product product) {
 		logger.debug("하위카테고리 "+product.getSubcategory_id());
 		logger.debug("상품명 "+product.getProduct_name());
 		logger.debug("가격 "+product.getPrice());
 		logger.debug("브랜드 "+product.getBrand());
 		logger.debug("상세내용 "+product.getDetail());
-		logger.debug("업로드 이미지명 "+product.getRepImg().getOriginalFilename());
+		/*logger.debug("업로드 이미지명 "+product.getRepImg().getOriginalFilename());
 		
+		for(int i=0;i<product.getAddImg().length;i++) {
+			logger.debug(product.getAddImg()[i].getOriginalFilename());
+		}*/
+		
+		productService.regist(fileManager, product);//상품 등록 서비스에게 요청
+
+		
+
+		
+		/*
 		for(int i=0;i<product.getFit().length;i++) {
 			String fit = product.getFit()[i];
 			logger.debug("지원 사이즈는  "+fit);
@@ -145,12 +169,13 @@ public class ProductController {
 		
 		//db에 넣기 
 		productService.regist(product);
-		
-		return "redirect:/admin/product/list";
+		*/
+		return "hahaha";
 	}
+
 	
-	//상품 수정
 	
+	//상품 수정	
 	//상품 삭제
 	
 }
