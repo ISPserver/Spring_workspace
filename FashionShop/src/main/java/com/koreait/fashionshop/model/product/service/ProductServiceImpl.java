@@ -1,7 +1,6 @@
 package com.koreait.fashionshop.model.product.service;
 
 import java.io.File;
-
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.koreait.fashionshop.common.FileManager;
+import com.koreait.fashionshop.exception.ProductRegistException;
 import com.koreait.fashionshop.model.domain.Color;
 import com.koreait.fashionshop.model.domain.Image;
 import com.koreait.fashionshop.model.domain.Product;
@@ -33,9 +33,8 @@ public class ProductServiceImpl implements ProductService{
 	private ColorDAO colorDAO;
 	
 	@Override
-	public List selectAll() {
-		// TODO Auto-generated method stub
-		return null;
+	public List selectAll() {		
+		return productDAO.selectAll();
 	}
 
 	@Override
@@ -51,7 +50,7 @@ public class ProductServiceImpl implements ProductService{
 	}
 
 	@Override
-	public void regist(FileManager fileManager, Product product) {
+	public void regist(FileManager fileManager, Product product) throws ProductRegistException{
 		String ext = fileManager.getExtend(product.getRepImg().getOriginalFilename());
 		product.setFilename(ext);//확장자 결정
 		//db에 넣는 일은 DAO에게 시키고
@@ -83,7 +82,7 @@ public class ProductServiceImpl implements ProductService{
 		//기타 옵션 중, 색상 사이즈 넣기(반복문)
 		//사이즈
 		for(Psize psize : product.getPsize()) {
-			logger.debug("선택 사이즈는:"+psize.getFit());
+			//logger.debug("선택 사이즈는:"+psize.getFit());
 			psize.setProduct_id(product.getProduct_id());//fk 대입
 			psizeDAO.insert(psize);
 		}

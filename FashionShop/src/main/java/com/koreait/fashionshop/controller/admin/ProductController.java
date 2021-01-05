@@ -1,8 +1,5 @@
 package com.koreait.fashionshop.controller.admin;
 
-import java.io.File;
-
-import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -11,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -18,7 +16,9 @@ import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.koreait.fashionshop.common.FileManager;
+import com.koreait.fashionshop.exception.ProductRegistException;
 import com.koreait.fashionshop.model.domain.Product;
+import com.koreait.fashionshop.model.domain.Psize;
 import com.koreait.fashionshop.model.domain.SubCategory;
 import com.koreait.fashionshop.model.product.service.ProductService;
 import com.koreait.fashionshop.model.product.service.SubCategoryService;
@@ -30,24 +30,29 @@ public class ProductController implements ServletContextAware{
 	private static final Logger logger=LoggerFactory.getLogger(ProductController.class);
 	
 	@Autowired
-	private TopCategoryService topCategoryService;	
+	private TopCategoryService topCategoryService;
+	
 	@Autowired
-	private SubCategoryService subCategoryService;	
+	private SubCategoryService subCategoryService;
+	
 	@Autowired
-	private ProductService productService;	
+	private ProductService productService;
+	
 	@Autowired
 	private FileManager fileManager;
-	//ServletContext는 getRealPath() 사용 위해 선언
+	
+	//우리가 왜 ServletContext를 써야하는가?   getRealPath() 사용하려고!!!
 	private ServletContext servletContext;
 	
 	@Override
 	public void setServletContext(ServletContext servletContext) {
 		this.servletContext = servletContext;
-		//이 타이밍을 놓치지 말고, 실제 물리적 경로를 FileManager에 대입하기
+		//이 타이밍을 놓치지말고, 실제 물리적 경로를 FileManager 에 대입해놓자!!!
 		fileManager.setSaveBasicDir(servletContext.getRealPath(fileManager.getSaveBasicDir()));
 		fileManager.setSaveAddonDir(servletContext.getRealPath(fileManager.getSaveAddonDir()));
 		
-		logger.debug(fileManager.getSaveBasicDir());		
+		logger.debug(fileManager.getSaveBasicDir());
+		
 	}
 	
 	//상위카테고리 가져오기 
@@ -107,9 +112,11 @@ public class ProductController implements ServletContextAware{
 
 	
 	//상품목록
-	@RequestMapping(value="/admin/product/list", method=RequestMethod.GET )
+	@RequestMapping(value="/admin/product/list", method=RequestMethod.GET )	
 	public ModelAndView getProductList() {
 		ModelAndView mav = new ModelAndView("admin/product/product_list");
+		List productList = productService.selectAll();
+		mav.addObject("productList",productList);
 		return mav;
 	}
 	
@@ -124,58 +131,47 @@ public class ProductController implements ServletContextAware{
 	//상품 상세 
 	
 	//상품 등록 
-	@RequestMapping(value="/admin/product/regist", method=RequestMethod.POST)
+	@RequestMapping(value="/admin/product/regist", method=RequestMethod.POST, produces ="text/html;charset=utf8")
 	@ResponseBody
-	public String registProduct(Product product) {
-		logger.debug("하위카테고리 "+product.getSubcategory_id());
+	public String registProduct(Product product, String[] test) {
+		logger.debug("하위카테고리 "+product.getSubCategory().getSubcategory_id());
 		logger.debug("상품명 "+product.getProduct_name());
 		logger.debug("가격 "+product.getPrice());
 		logger.debug("브랜드 "+product.getBrand());
 		logger.debug("상세내용 "+product.getDetail());
-		/*logger.debug("업로드 이미지명 "+product.getRepImg().getOriginalFilename());
 		
-		for(int i=0;i<product.getAddImg().length;i++) {
-			logger.debug(product.getAddImg()[i].getOriginalFilename());
-		}*/
+		for(Psize psize : product.getPsize()) {
+			logger.debug(psize.getFit());
+		}						
 		
-		productService.regist(fileManager, product);//상품 등록 서비스에게 요청
-
+		productService.regist(fileManager, product); //상품등록 서비스에게 요청
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"result\":1,");
+		sb.append("\"msg\":\"상품등록 성공\"");
+		sb.append("}");
 		
-
-		
-		/*
-		for(int i=0;i<product.getFit().length;i++) {
-			String fit = product.getFit()[i];
-			logger.debug("지원 사이즈는  "+fit);
-		}
-		
-		
-		//대표이미지 업로드(현재 날짜로 처리)
-		//어떤 파일명으로, 어디에 저장할지 결정
-		long time = System.currentTimeMillis();
-		
-		//확장자 얻기
-		String ext = fileManager.getExtend(product.getRepImg().getOriginalFilename());
-		String filename=time+"."+ext;
-		try {
-			product.getRepImg().transferTo(new File(fileManager.getSaveDir()+"/"+filename));
-			logger.debug(filename);
-			
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		//db에 넣기 
-		productService.regist(product);
-		*/
-		return "hahaha";
+		return sb.toString();
 	}
 
+
 	
 	
-	//상품 수정	
+	//상품 수정
+	
 	//상품 삭제
+
 	
+	//예외처리 
+	//위의 메서드 중에서 하나라도 예외가 발생하면, 아래 핸들러 동작
+	@ExceptionHandler(ProductRegistException.class)
+	@ResponseBody
+	public String handleException(ProductRegistException e) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"result\":0");
+		sb.append("\"msg\":\""+e.getMessage()+"\"");
+		sb.append("}");
+		return sb.toString();
+	}
 }
