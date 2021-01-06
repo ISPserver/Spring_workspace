@@ -33,9 +33,11 @@ create table color(
 );
 create table cart(
    cart_id number primary key
- , product_id number 
+ , product_id number
+ , member_id number 
  , quantity number default 0
  , constraint fk_productcart foreign key(product_id) references product(product_id) 
+ , constraint fk_membercart foreign key(member_id) references member(member_id) 
 );
 drop table score;
 create table score(

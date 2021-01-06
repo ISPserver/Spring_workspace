@@ -1,4 +1,5 @@
-package com.koreait.fashionshop.controller.admin;
+package com.koreait.fashionshop.controller.product;
+
 
 import java.util.List;
 
@@ -55,7 +56,7 @@ public class ProductController implements ServletContextAware{
 		
 	}
 	
-	//상위카테고리 가져오기 
+	//상위카테고리 가져오기 (관리자용)
 	@RequestMapping(value="/admin/product/registform", method=RequestMethod.GET)
 	public ModelAndView getTopList() {
 		//3단계: 로직 객체에 일시킨다
@@ -112,11 +113,11 @@ public class ProductController implements ServletContextAware{
 
 	
 	//상품목록
-	@RequestMapping(value="/admin/product/list", method=RequestMethod.GET )	
+	@RequestMapping(value="/admin/product/list", method=RequestMethod.GET )
 	public ModelAndView getProductList() {
 		ModelAndView mav = new ModelAndView("admin/product/product_list");
 		List productList = productService.selectAll();
-		mav.addObject("productList",productList);
+		mav.addObject("productList", productList);
 		return mav;
 	}
 	
@@ -142,9 +143,10 @@ public class ProductController implements ServletContextAware{
 		
 		for(Psize psize : product.getPsize()) {
 			logger.debug(psize.getFit());
-		}						
+		}
 		
 		productService.regist(fileManager, product); //상품등록 서비스에게 요청
+		
 		StringBuilder sb = new StringBuilder();
 		sb.append("{");
 		sb.append("\"result\":1,");
@@ -163,7 +165,7 @@ public class ProductController implements ServletContextAware{
 
 	
 	//예외처리 
-	//위의 메서드 중에서 하나라도 예외가 발생하면, 아래 핸들러 동작
+	//위의 메서드 중에서 하나라도 예외가 발생하면, 아래의 핸들러가 동작
 	@ExceptionHandler(ProductRegistException.class)
 	@ResponseBody
 	public String handleException(ProductRegistException e) {
@@ -173,5 +175,37 @@ public class ProductController implements ServletContextAware{
 		sb.append("\"msg\":\""+e.getMessage()+"\"");
 		sb.append("}");
 		return sb.toString();
+	}
+	
+	
+	
+	/* *********************************************************************** 
+	  쇼핑몰 프론트 요청 처리 
+	 ************************************************************************/
+	//상품목록 요청 처리
+	@RequestMapping(value="/shop/product/list", method=RequestMethod.GET)
+	public ModelAndView getShopProductList(int subcategory_id) {//하위카테고리의 id
+		List topList = topCategoryService.selectAll();//상품카테고리 목록
+		List productList = productService.selectById(subcategory_id);//상품목록
+		
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("topList", topList);
+		mav.addObject("productList", productList);
+		
+		mav.setViewName("shop/product/list");
+		return mav;
+	}
+		
+	//상품상세 보기 요청 
+	@RequestMapping(value="/shop/product/detail", method=RequestMethod.GET)
+	public ModelAndView getShopProductDetail(int product_id) {
+		List topList = topCategoryService.selectAll();//상품카테고리 목록
+		Product product = productService.select(product_id);//상품 1건 가져오기
+		
+		ModelAndView mav = new ModelAndView("shop/product/detail");
+		mav.addObject("topList", topList);
+		mav.addObject("product", product);
+		
+		return mav;
 	}
 }
