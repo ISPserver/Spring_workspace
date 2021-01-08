@@ -1,4 +1,4 @@
-<%@page import="com.koreait.fashionshop.common.MessageData"%>
+<%@page import="com.koreait.fashionshop.model.common.MessageData"%>
 <%@ page contentType="text/html;charset=UTF-8"%>
 <%
 	

@@ -8,12 +8,30 @@ import org.springframework.stereotype.Service;
 import com.koreait.fashionshop.exception.CartException;
 import com.koreait.fashionshop.model.domain.Cart;
 import com.koreait.fashionshop.model.domain.Member;
+import com.koreait.fashionshop.model.domain.OrderDetail;
+import com.koreait.fashionshop.model.domain.OrderSummary;
+import com.koreait.fashionshop.model.domain.Receiver;
 import com.koreait.fashionshop.model.payment.repository.CartDAO;
+import com.koreait.fashionshop.model.payment.repository.OrderDetailDAO;
+import com.koreait.fashionshop.model.payment.repository.OrderSummaryDAO;
+import com.koreait.fashionshop.model.payment.repository.PaymethodDAO;
+import com.koreait.fashionshop.model.payment.repository.ReceiverDAO;
 
 @Service
 public class PaymentServiceImpl implements PaymentService{
 	@Autowired
 	private CartDAO cartDAO;
+	@Autowired
+	private PaymethodDAO paymethodDAO;
+	
+	//주문관련 3가지 DAO
+	@Autowired
+	private OrderSummaryDAO orderSummaryDAO;
+	@Autowired
+	private	ReceiverDAO receiverDAO;
+	@Autowired
+	private OrderDetailDAO orderDetailDAO;
+	
 	
 	@Override
 	public List selectCartList() {
@@ -54,6 +72,30 @@ public class PaymentServiceImpl implements PaymentService{
 
 	public void delete(Member member) throws CartException{
 		cartDAO.delete(member);
+	}
+	
+	@Override
+	public List selectPaymethodList() {		
+		return paymethodDAO.selectAll();
+	}
+	
+	//주문 등록
+	@Override
+	public void registOrder(OrderSummary orderSummary, Receiver receiver) {
+		//주문 요약 등록
+		orderSummaryDAO.insert(orderSummary);
+		//주문 요약이 등록된 이후, orderSummary VO에는 mybatis의 selectKey에 의해 order_summary_id가 채워져 있음
+		//따라서 취득한 주문번호를 받는사람 , 상세에 넣어줘야 한다.
+		
+		//받는 사람 정보 등록
+		receiver.setOrder_summary_id(orderSummary.getOrder_summary_id());
+		receiverDAO.insert(receiver);
+		
+		//주문 상세 등록	
+		//장바구니를 조회하여 OrderDetail VO 처리
+		//장바구니 가져오기
+		
+		
 	}
 	
 }

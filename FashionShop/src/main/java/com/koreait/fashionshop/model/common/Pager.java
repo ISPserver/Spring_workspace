@@ -1,5 +1,5 @@
 /*Paging 처리를 재사용성을 높이는 클래스 정의*/
-package com.koreait.fashionshop.common;
+package com.koreait.fashionshop.model.common;
 
 import java.util.List;
 
