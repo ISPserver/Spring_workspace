@@ -1,8 +1,9 @@
-	package com.koreait.fashionshop.controller.payment;
+package com.koreait.fashionshop.controller.payment;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -66,14 +67,8 @@ public class PaymentController {
 	
 	//장바구니 목록 요청 
 	@RequestMapping(value="/shop/cart/list", method=RequestMethod.GET)
-	public ModelAndView getCartList(HttpSession session) {
-		//장바구니 목록 요청보다 앞서, 우선 보안처리부터 먼저 해야함..
-		if(session.getAttribute("member")==null) {
-			//여기서 예외를 처리하면, 모든 컨트롤러 메서드마다 로그인과 관련된 코드가 중복되므로,
-			//예외를 일으켜 하나의 메서드에서 처리하도록 재사용성을 높이자..
-			throw new LoginRequiredException("로그인이 필요한 서비스입니다.");
-		}
-		
+	public ModelAndView getCartList(HttpServletRequest request) {
+		HttpSession session = request.getSession();
 		Member member = (Member)session.getAttribute("member");
 		List topList = topCategoryService.selectAll();
 		List cartList = paymentService.selectCartList(member.getMember_id());
@@ -97,6 +92,7 @@ public class PaymentController {
 		
 		return "redirect:/shop/cart/list";
 	}
+	
 	
 	@RequestMapping(value="/shop/cart/edit", method=RequestMethod.POST)
 	public ModelAndView editCart(@RequestParam("cart_id") int[] cartArray, @RequestParam("quantity") int[] qArray) {
@@ -124,18 +120,18 @@ public class PaymentController {
 		return mav;
 	}
 	
-	//체크아웃 페이지 요청
+	//체크아웃 페이지 요청 
 	@GetMapping("/shop/payment/form")
 	public String payForm(Model model, HttpSession session) {
 		List topList = topCategoryService.selectAll();
-		model.addAttribute("topList", topList); //ModelAndView에서의 Model만 사용
+		model.addAttribute("topList", topList); //ModelAndView에서의 Model만 사용..
 		
-		//결제수단 가져오기
+		//결제수단 가져오기 
 		List paymethodList = paymentService.selectPaymethodList();
-		model.addAttribute("paymethodList",paymethodList);
+		model.addAttribute("paymethodList", paymethodList);
 		
-		//장바구니 정보 가져오기
-		Member member = (Member)session.getAttribute("member");
+		//장바구니 정보도 가져오기 
+		Member member =(Member)session.getAttribute("member");
 		List cartList = paymentService.selectCartList(member.getMember_id());
 		model.addAttribute("cartList", cartList);
 		
@@ -145,19 +141,20 @@ public class PaymentController {
 	//결제요청 처리
 	@PostMapping("/shop/payment/regist")
 	public String pay(HttpSession session, OrderSummary orderSummary, Receiver receiver) {
-		logger.debug("받을 사람 이름"+ receiver.getReceiver_name());
-		logger.debug("받을 사람 연락처"+ receiver.getReceiver_phone());
-		logger.debug("받을 사람 주소"+ receiver.getReceiver_addr());
-		logger.debug("결제 방법은"+ orderSummary.getPaymethod_id());
-		logger.debug("total_price"+ orderSummary.getTotal_price());
-		logger.debug("total_pay"+ orderSummary.getTotal_pay());
-		Member member = (Member)session.getAttribute("member");
-		orderSummary.setMember_id(member.getMember_id());//회원pk
+		logger.debug("받을 사람 이름 "+receiver.getReceiver_name());
+		logger.debug("받을 사람 연락처 "+receiver.getReceiver_phone());
+		logger.debug("받을 사람 주소 "+receiver.getReceiver_addr());
+		logger.debug("결제방법은 "+orderSummary.getPaymethod_id());
+		logger.debug("total_price "+orderSummary.getTotal_price());
+		logger.debug("total_pay "+orderSummary.getTotal_pay());
+		Member member=(Member)session.getAttribute("member");
+		orderSummary.setMember_id(member.getMember_id()); //회원 pk
 		
 		paymentService.registOrder(orderSummary, receiver);
 		
 		return "";
 	}
+	
 	
 	//장바구니와 관련된 예외처리 핸들러
 	@ExceptionHandler(CartException.class)
@@ -171,17 +168,5 @@ public class PaymentController {
 		return messageData;
 	}
 	
-	@ExceptionHandler(LoginRequiredException.class)
-	public ModelAndView handleException(LoginRequiredException e) {
-		ModelAndView mav = new ModelAndView();
-		
-		MessageData messageData = new MessageData();
-		messageData.setResultCode(0);
-		messageData.setMsg(e.getMessage());
-		mav.addObject("messageData", messageData);
-		mav.setViewName("shop/error/message");
-		
-		return mav;
-	}
 	
 }

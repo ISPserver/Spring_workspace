@@ -31,7 +31,7 @@
 			});
 			$("#cart-form").submit();
 		}	
-		
+	
 	}
 	
 	function checkoutForm() {
