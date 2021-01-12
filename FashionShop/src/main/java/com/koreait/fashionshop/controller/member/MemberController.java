@@ -35,10 +35,8 @@ public class MemberController {
 	
 	//회원가입폼 요청 
 	@RequestMapping(value="/shop/member/registForm", method=RequestMethod.GET)
-	public ModelAndView getRegistForm() {
-		List topList = topCategoryService.selectAll();
+	public ModelAndView getRegistForm(HttpServletRequest request) {
 		ModelAndView mav = new ModelAndView("shop/member/signup");
-		mav.addObject("topList", topList); //담기
 		return mav;
 	}
 	
@@ -67,11 +65,8 @@ public class MemberController {
 
 	//로그인 홈 요청 
 	@RequestMapping(value="/shop/member/loginForm", method=RequestMethod.GET)
-	public ModelAndView getLoginForm() {
-		List topList = topCategoryService.selectAll();
+	public ModelAndView getLoginForm(HttpServletRequest request) {
 		ModelAndView mav = new ModelAndView("shop/member/signin");
-		mav.addObject("topList", topList); //담기
-		
 		return mav;
 	}
 	
@@ -88,20 +83,19 @@ public class MemberController {
 		return "redirect:/";
 	}
 	
-	//로그아웃 요청 처리
+	//로그아웃 요청 처리 
 	@RequestMapping(value="/shop/member/logout", method=RequestMethod.GET)
 	public ModelAndView logout(HttpServletRequest request) {
-		request.getSession().invalidate();//세션 무효화, 이 시점부터 담겨진 데이터가 다 무효화 된다.
+		request.getSession().invalidate(); //세션 무효화, 이시점부터 담겨진 데이터가 다 무효가 된다
 		MessageData messageData = new MessageData();
 		messageData.setResultCode(1);
-		messageData.setMsg("로그아웃 되었습니다.");
+		messageData.setMsg("로그아웃 되었습니다");
 		messageData.setUrl("/");
 		
 		ModelAndView mav = new ModelAndView("shop/error/message");
-		mav.addObject("messageData",messageData);
+		mav.addObject("messageData", messageData);
 		return mav;
 	}
-	
 	
 	//예외 핸들러 2가지 처리
 	@ExceptionHandler(MemberRegistException.class)

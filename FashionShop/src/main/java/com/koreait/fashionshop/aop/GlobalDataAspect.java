@@ -19,7 +19,7 @@ public class GlobalDataAspect {
 	
 	public Object getGlobalData(ProceedingJoinPoint joinPoint) throws Throwable{
 		Object result=null;
-		HttpServletRequest request;
+		HttpServletRequest request=null;
 		
 		//매개변수로부터 요청 객체 추출!!
 		for(Object arg : joinPoint.getArgs()) {
@@ -28,14 +28,26 @@ public class GlobalDataAspect {
 			}
 		}
 		
-		//topList 가져오기
-		List topList = topCategoryService.selectAll();
-		Object returnObj = joinPoint.proceed();//원래 호출하려 했던 메서드호출
-		ModelAndView mav = null;
-		if( returnObj instanceof ModelAndView) {
-			mav =(ModelAndView)returnObj;
-			mav.addObject("topList",topList);
-			result=mav;
+		String uri = request.getRequestURI(); //클라이언트의 요청 URI 스트링 정보
+		
+		//topList를 저장해야 하는 경우와 그렇지 않은 경우를 나누어서 처리
+		if(	uri.equals("/shop/member/login") || 
+			uri.equals("/shop/member/regist") ||
+			uri.equals("/admin") ||
+			uri.equals("/admin/product/regist")
+			
+		) {
+			result=joinPoint.proceed(); //원래 호출하려 했던 메서드 호출!! go ahead
+		}else {//필요한 경우
+			//topList 가져오기
+			List topList = topCategoryService.selectAll();
+			Object returnObj = joinPoint.proceed();//원래 호출하려 했던 메서드호출
+			ModelAndView mav = null;
+			if( returnObj instanceof ModelAndView) {
+				mav =(ModelAndView)returnObj;
+				mav.addObject("topList",topList);
+				result=mav;
+			}
 		}
 		return result;
 	}

@@ -1,11 +1,44 @@
 package com.koreait.fashionshop.aop;
 
-import org.aspectj.lang.ProceedingJoinPoint;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
-/*앞으로 로그인이 필요한 서비스 여부를 처리하기 위한 코드는, 컨트롤러에 두지 않고
- * 지금 이 객체로 공통화 시켜 AOP를 적용할 것*/
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.koreait.fashionshop.exception.LoginRequiredException;
+
+
 public class MemberSessionCheckAspect {
-	public Object sessionCheck(ProceedingJoinPoint joinPoint) {
-		return null;
-	}
+   private static final Logger logger = LoggerFactory.getLogger(MemberSessionCheckAspect.class);
+   
+   public Object sessionCheck(ProceedingJoinPoint joinPoint) throws Throwable {
+      Object result = null;
+      Object target = joinPoint.getTarget();
+      logger.debug("target : " + target);
+      String methodName = joinPoint.getSignature().getName();
+      
+      logger.debug("methodName : " + methodName);
+      
+      HttpServletRequest request = null;
+      
+      Object [] args = joinPoint.getArgs();
+      for(Object arg : args) {
+         logger.debug("arg : " + arg);
+         if(arg instanceof HttpServletRequest) {
+            request = (HttpServletRequest)arg;
+         }
+      }
+      
+      HttpSession session = request.getSession();
+      
+      if(session.getAttribute("member") == null) {
+         throw new LoginRequiredException("로그인이 필요한 서비스입니다");
+      } else {
+         result = joinPoint.proceed();
+      }
+      
+      return result;
+   }
 }
