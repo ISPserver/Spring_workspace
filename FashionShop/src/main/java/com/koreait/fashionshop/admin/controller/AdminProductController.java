@@ -1,7 +1,6 @@
 package com.koreait.fashionshop.admin.controller;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -13,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -27,12 +27,11 @@ import com.koreait.fashionshop.model.common.MessageData;
 import com.koreait.fashionshop.model.domain.Product;
 import com.koreait.fashionshop.model.domain.Psize;
 import com.koreait.fashionshop.model.domain.SubCategory;
-import com.koreait.fashionshop.model.product.service.DumpService;
 import com.koreait.fashionshop.model.product.service.ProductService;
 import com.koreait.fashionshop.model.product.service.SubCategoryService;
 import com.koreait.fashionshop.model.product.service.TopCategoryService;
 
-//ê´€ë¦¬ì ëª¨ë“œì—ì„œì˜ ìƒí’ˆì— ëŒ€í•œ ìš”ì²­ ì²˜ë¦¬
+//°ü¸®ÀÚ ¸ğµå¿¡¼­ÀÇ »óÇ°¿¡ ´ëÇÑ ¿äÃ» Ã³¸®
 @Controller
 public class AdminProductController implements ServletContextAware{
 	private static final Logger logger=LoggerFactory.getLogger(AdminProductController.class);
@@ -44,40 +43,34 @@ public class AdminProductController implements ServletContextAware{
 	private SubCategoryService subCategoryService;
 	
 	@Autowired
-	private ProductService productService; //ë‚±ê°œì˜ ìƒí’ˆë“±ë¡ì‹œ
-	
-	@Autowired
-	private DumpService dumpService; //ëŒ€ëŸ‰ ë“±ë¡ì‹œ 
+	private ProductService productService;
 	
 	@Autowired
 	private FileManager fileManager;
 	
-	
-	//ìš°ë¦¬ê°€ ì™œ ServletContextë¥¼ ì¨ì•¼í•˜ëŠ”ê°€?   getRealPath() ì‚¬ìš©í•˜ë ¤ê³ !!!
+	//¿ì¸®°¡ ¿Ö ServletContext¸¦ ½á¾ßÇÏ´Â°¡?   getRealPath() »ç¿ëÇÏ·Á°í!!!
 	private ServletContext servletContext;
 	
 	@Override
 	public void setServletContext(ServletContext servletContext) {
 		this.servletContext = servletContext;
-		//ì´ íƒ€ì´ë°ì„ ë†“ì¹˜ì§€ë§ê³ , ì‹¤ì œ ë¬¼ë¦¬ì  ê²½ë¡œë¥¼ FileManager ì— ëŒ€ì…í•´ë†“ì!!!
-		logger.debug("setServletContextì—ì„œì˜ fileManager saveBasicDir is "+fileManager.getSaveBasicDir());
-		
+		//ÀÌ Å¸ÀÌ¹ÖÀ» ³õÄ¡Áö¸»°í, ½ÇÁ¦ ¹°¸®Àû °æ·Î¸¦ FileManager ¿¡ ´ëÀÔÇØ³õÀÚ!!!
 		//fileManager.setSaveBasicDir(servletContext.getRealPath(fileManager.getSaveBasicDir()));
 		//fileManager.setSaveAddonDir(servletContext.getRealPath(fileManager.getSaveAddonDir()));
 		fileManager.setSaveBasicDir(fileManager.getSaveBasicDir());
 		fileManager.setSaveAddonDir(fileManager.getSaveAddonDir());
-		
-		logger.debug("setServletContext ì—ì„œì˜ "+fileManager.getSaveBasicDir());
+
+		logger.debug(fileManager.getSaveBasicDir());
 		
 	}
 	
-	//ìƒìœ„ì¹´í…Œê³ ë¦¬ ê°€ì ¸ì˜¤ê¸° (ê´€ë¦¬ììš©)
+	//»óÀ§Ä«Å×°í¸® °¡Á®¿À±â (°ü¸®ÀÚ¿ë)
 	@RequestMapping(value="/product/registform", method=RequestMethod.GET)
 	public ModelAndView getTopList(HttpServletRequest request) {
-		//3ë‹¨ê³„: ë¡œì§ ê°ì²´ì— ì¼ì‹œí‚¨ë‹¤
+		//3´Ü°è: ·ÎÁ÷ °´Ã¼¿¡ ÀÏ½ÃÅ²´Ù
 		List topList = topCategoryService.selectAll();
 		
-		//4ë‹¨ê³„: ì €ì¥ 
+		//4´Ü°è: ÀúÀå 
 		ModelAndView mav = new ModelAndView();
 		mav.addObject("topList", topList);
 		mav.setViewName("admin/product/regist_form");
@@ -86,8 +79,8 @@ public class AdminProductController implements ServletContextAware{
 	}
 	
 	
-	//í•˜ìœ„ì¹´í…Œê³ ë¦¬ ê°€ì ¸ì˜¤ê¸°
-	//ìŠ¤í”„ë§ì—ì„œëŠ” javaê°ì²´ì™€ Jsonê°„ ë³€í™˜(converting)ì„ ìë™ìœ¼ë¡œ ì²˜ë¦¬í•´ì£¼ëŠ” ë¼ì´ë¸ŒëŸ¬ë¦¬ë¥¼ ì§€ì›í•œë‹¤
+	//ÇÏÀ§Ä«Å×°í¸® °¡Á®¿À±â
+	//½ºÇÁ¸µ¿¡¼­´Â java°´Ã¼¿Í Json°£ º¯È¯(converting)À» ÀÚµ¿À¸·Î Ã³¸®ÇØÁÖ´Â ¶óÀÌºê·¯¸®¸¦ Áö¿øÇÑ´Ù
 	@RequestMapping(value="/product/sublist", method=RequestMethod.GET)
 	@ResponseBody
 	public List getSubList(HttpServletRequest request, int topcategory_id) {
@@ -95,29 +88,61 @@ public class AdminProductController implements ServletContextAware{
 		return subList;
 	}
 	
+	/*
+	@RequestMapping(value="/admin/product/sublist", method=RequestMethod.GET, produces ="application/json;charset=utf8")
+	@ResponseBody //jsp¿Í °°Àº ºäÆäÀÌÁö°¡ ¾Æ´Ñ, ´Ü¼ø µ¥ÀÌÅÍ¸¸ Àü¼Û½Ã...
+	public String getSubList(int topcategory_id) {
+		logger.debug("tocategory_id : "+topcategory_id);
+		
+		List<SubCategory> subList = subCategoryService.selectAllById(topcategory_id);
+		
+		// ¸®½ºÆ®¸¦ jsonÀ¸·Î º¯ÇüÇÏ¿© º¸³»Áà¾ßÇÔ..
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"subList\" : [");
+		for(int i=0;i<subList.size();i++) {
+			SubCategory subCategory = subList.get(i);
+			sb.append("{");
+			sb.append("\"subcategory_id\":"+subCategory.getSubcategory_id()+" ,");
+			sb.append("\"topcategory_id\":"+subCategory.getTopcategory_id()+",");
+			sb.append("\"name\":\""+subCategory.getName()+"\"");
+			if(i<subList.size()-1) {
+				sb.append("},");
+			}else {
+				sb.append("}");
+			}
+		}
+		sb.append("]");
+		sb.append("}");		
+		
+		return sb.toString();
+	}
+	 */
+
+	//¿¢¼¿ ´ë·® µî·ÏÆû
 	@GetMapping("/product/excel/registform")
-	public String getExcelForm(HttpServletRequest request) {
+	public String getExcellForm(HttpServletRequest request) {
 		return "admin/product/excel_form";
 	}
 	
-	//ì—‘ì…€ì— ì˜í•œ ìƒí’ˆë“±ë¡ ìš”ì²­ ì²˜ë¦¬ 
-	@RequestMapping(value="/product/excel/regist", method=RequestMethod.POST)
-	@ResponseBody // ë¹„ë™ê¸° ì´ë¯€ë¡œ 
-	public MessageData registByExcel(HttpServletRequest request, MultipartFile dump) {
-		String path = fileManager.getSaveBasicDir()+File.separator+dump.getOriginalFilename(); //ì €ì¥í•  íŒŒì¼ëª…
+	//¿¢¼¿¿¡ ÀÇÇÑ »óÇ°µî·Ï ¿äÃ» Ã³¸®
+	@RequestMapping(value="/product/excel/regist", method = RequestMethod.POST,  produces ="text/html;charset=utf8")
+	@ResponseBody//ºñµ¿±â ÀÌ¹Ç·Î 
+	public String registByExcel(HttpServletRequest request, MultipartFile dump) {		
+		String path = fileManager.getSaveBasicDir()+File.separator+dump.getOriginalFilename();//ÀúÀåÇÒ ÆÄÀÏ¸í		
 		fileManager.saveFile(path, dump);
 		
-		MessageData messageData = new MessageData();
-		messageData.setResultCode(1);
-		messageData.setMsg("ì—‘ì…€ë“±ë¡ ì„±ê³µ");
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"result\":1,");
+		sb.append("\"msg\":\"»óÇ°µî·Ï ¼º°ø\"");
+		sb.append("}");
 		
-		//ì—‘ì…€ ì½ì–´ì„œ ë°ì´í„°ë² ì´ìŠ¤ì— ë„£ê¸°!! 
-		dumpService.regist(path);
-
-		return messageData;
+		return sb.toString();
 	}
 	
-	//ìƒí’ˆëª©ë¡
+	
+	//»óÇ°¸ñ·Ï
 	@RequestMapping(value="/product/list", method=RequestMethod.GET )
 	public ModelAndView getProductList(HttpServletRequest request) {
 		ModelAndView mav = new ModelAndView("admin/product/product_list");
@@ -126,7 +151,7 @@ public class AdminProductController implements ServletContextAware{
 		return mav;
 	}
 	
-	//ìƒí’ˆë“±ë¡ í¼ 
+	//»óÇ°µî·Ï Æû 
 	@RequestMapping(value="/product/registform")
 	public String registForm() {
 		
@@ -134,41 +159,43 @@ public class AdminProductController implements ServletContextAware{
 	}
 	
 	
-	//ìƒí’ˆ ìƒì„¸ 
+	//»óÇ° »ó¼¼ 
 	
-	//ìƒí’ˆ ë“±ë¡ 
-	@RequestMapping(value="/product/regist", method=RequestMethod.POST)
+	//»óÇ° µî·Ï 
+	@RequestMapping(value="/product/regist", method=RequestMethod.POST, produces ="text/html;charset=utf8")
 	@ResponseBody
-	public MessageData registProduct(HttpServletRequest request, Product product, String[] test) {
-		logger.debug("í•˜ìœ„ì¹´í…Œê³ ë¦¬ "+product.getSubCategory().getSubcategory_id());
-		logger.debug("ìƒí’ˆëª… "+product.getProduct_name());
-		logger.debug("ê°€ê²© "+product.getPrice());
-		logger.debug("ë¸Œëœë“œ "+product.getBrand());
-		logger.debug("ìƒì„¸ë‚´ìš© "+product.getDetail());
+	public String registProduct(HttpServletRequest request,Product product, String[] test) {
+		logger.debug("ÇÏÀ§Ä«Å×°í¸® "+product.getSubCategory().getSubcategory_id());
+		logger.debug("»óÇ°¸í "+product.getProduct_name());
+		logger.debug("°¡°İ "+product.getPrice());
+		logger.debug("ºê·£µå "+product.getBrand());
+		logger.debug("»ó¼¼³»¿ë "+product.getDetail());
 		
 		for(Psize psize : product.getPsize()) {
 			logger.debug(psize.getFit());
 		}
 		
-		productService.regist(fileManager, product); //ìƒí’ˆë“±ë¡ ì„œë¹„ìŠ¤ì—ê²Œ ìš”ì²­
+		productService.regist(fileManager, product); //»óÇ°µî·Ï ¼­ºñ½º¿¡°Ô ¿äÃ»
 		
-		MessageData messageData = new MessageData();
-		messageData.setResultCode(1);
-		messageData.setMsg("ìƒí’ˆ ë“±ë¡ ì„±ê³µì…ë‹ˆë‹¤.");
+		StringBuilder sb = new StringBuilder();
+		sb.append("{");
+		sb.append("\"result\":1,");
+		sb.append("\"msg\":\"»óÇ°µî·Ï ¼º°ø\"");
+		sb.append("}");
 		
-		return messageData;
+		return sb.toString();
 	}
 
 
 	
 	
-	//ìƒí’ˆ ìˆ˜ì •
+	//»óÇ° ¼öÁ¤
 	
-	//ìƒí’ˆ ì‚­ì œ
+	//»óÇ° »èÁ¦
 
 	
-	//ì˜ˆì™¸ì²˜ë¦¬ 
-	//ìœ„ì˜ ë©”ì„œë“œ ì¤‘ì—ì„œ í•˜ë‚˜ë¼ë„ ì˜ˆì™¸ê°€ ë°œìƒí•˜ë©´, ì•„ë˜ì˜ í•¸ë“¤ëŸ¬ê°€ ë™ì‘
+	//¿¹¿ÜÃ³¸® 
+	//À§ÀÇ ¸Ş¼­µå Áß¿¡¼­ ÇÏ³ª¶óµµ ¿¹¿Ü°¡ ¹ß»ıÇÏ¸é, ¾Æ·¡ÀÇ ÇÚµé·¯°¡ µ¿ÀÛ
 	@ExceptionHandler(ProductRegistException.class)
 	@ResponseBody
 	public String handleException(ProductRegistException e) {
@@ -180,6 +207,35 @@ public class AdminProductController implements ServletContextAware{
 		return sb.toString();
 	}
 	
+	
+	
+	/* *********************************************************************** 
+	  ¼îÇÎ¸ô ÇÁ·ĞÆ® ¿äÃ» Ã³¸® 
+	 ************************************************************************/
+	//»óÇ°¸ñ·Ï ¿äÃ» Ã³¸®
+	@RequestMapping(value="/shop/product/list", method=RequestMethod.GET)
+	public ModelAndView getShopProductList(HttpServletRequest request, int subcategory_id) {//ÇÏÀ§Ä«Å×°í¸®ÀÇ id
+		List productList = productService.selectById(subcategory_id);//»óÇ°¸ñ·Ï
+		
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("productList", productList);
+		mav.setViewName("shop/product/list");
+		return mav;
+	}
+		
+	//»óÇ°»ó¼¼ º¸±â ¿äÃ» 
+	@RequestMapping(value="/shop/product/detail", method=RequestMethod.GET)
+	public ModelAndView getShopProductDetail(HttpServletRequest request, int product_id) {
+		Product product = productService.select(product_id);//»óÇ° 1°Ç °¡Á®¿À±â
+		ModelAndView mav = new ModelAndView("shop/product/detail");
+		mav.addObject("product", product);
+		
+		return mav;
+	}
+	
+	
+	//¿¹¿ÜÃ³¸® 
+	//À§ÀÇ ¸Ş¼­µå Áß¿¡¼­ ÇÏ³ª¶óµµ ¿¹¿Ü°¡ ¹ß»ıÇÏ¸é, ¾Æ·¡ÀÇ ÇÚµé·¯°¡ µ¿ÀÛ
 	@ExceptionHandler(UploadFailException.class)
 	@ResponseBody
 	public String handleException(UploadFailException e) {
@@ -190,6 +246,4 @@ public class AdminProductController implements ServletContextAware{
 		sb.append("}");
 		return sb.toString();
 	}
-	
-	
 }

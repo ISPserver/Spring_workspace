@@ -9,82 +9,97 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.koreait.fashionshop.model.domain.Color;
 import com.koreait.fashionshop.model.domain.Product;
+import com.koreait.fashionshop.model.domain.Psize;
 import com.koreait.fashionshop.model.domain.SubCategory;
 
 /*
- * ÀÌ ¿¢¼¿À» ÀĞ¾îµé¿©, ÀÚ¹ÙÀÇ POJOÇüÅÂ·Î º¯È¯ÇÏ´Â ¿ëµµ
+ * ì—‘ì…€ì„ ì½ì—¬ë“¤ì—¬, ìë°”ì˜ POJO í˜•íƒœë¡œ ë³€í™˜í•˜ëŠ” ìš©ë„
  * */
-@Component //scanÀÇ ´ë»óÀÌ µÊ
+@Component  //scanì˜ ëŒ€ìƒì´ ë¨
 public class ProductConverter {
+	private static final Logger logger=LoggerFactory.getLogger(ProductConverter.class);
 	
-	//´©±º°¡ ÀÌ ¸Ş¼­µå¸¦ È£ÃâÇÏ´Â ÀÚ´Â, ÀÚ½ÅÀÌ º¸À¯ÇÑ ½ºÆ®¸µ ÁÖ¼Ò¸¦ ³Ñ±â¸é µÊ
-	public List convertFromFile(String path) {	
-		List<Product> productList = new ArrayList<Product>();
+	//ëˆ„êµ°ê°€ ì´ ë©”ì„œë“œë¥¼ í˜¸ì¶œí•˜ëŠ” ìëŠ”, ìì‹ ì´ ë³´ìœ í•œ ìŠ¤íŠ¸ë¦¼ ì£¼ì†Œë¥¼ ë„˜ê¸°ë©´ ë¨..
+	public List convertFromFile(String path) {
+		logger.debug("convertFromFile ì—ì„œì˜ path is "+path);
 		
-		//¿¢¼¿ÆÄÀÏ Á¦¾î °´Ã¼ »ı¼º
-		FileInputStream fis = null;
+		List<Product> productList = new ArrayList<Product>();
+		FileInputStream fis =null;
 		try {
 			fis = new FileInputStream(path);
-			XSSFWorkbook book = new XSSFWorkbook(fis);
 			
-			//ÆÄÀÏÀ» Á¢±ÙÇßÀ¸´Ï, ½¬Æ®¿¡ Á¢±ÙÇØº¸±â
-			XSSFSheet sheet =  book.getSheetAt(0); //Ã¹¹øÂ° ½¬Æ®¿¡ Á¢±Ù
+			//ì—‘ì…€íŒŒì¼ ì œì–´ ê°ì²´ ìƒì„± 
+			XSSFWorkbook book=new XSSFWorkbook(fis);
 			
-			//ÀÌÁß ¹İº¹¹®ÀÇ È½¼ö ±¸ÇÏ±â
-			int rowCount = sheet.getPhysicalNumberOfRows();
+			//íŒŒì¼ì„ ì ‘ê·¼í–ˆìœ¼ë‹ˆ, ì‰¬íŠ¸ì— ì ‘ê·¼í•´ë³´ì
+			XSSFSheet sheet=book.getSheetAt(0); //ì²«ë²ˆì§¸ ì‰¬íŠ¸ì— ì ‘ê·¼
 			
-			for(int i=1; i<rowCount; i++) {
-				Product product = new Product(); //ÅÖºó VO ÁØºñ(Ã¤¿ö³Ö±â À§ÇÔ)
-				//ÄÃ·³¼ö¸¸Å­ ¹İº¹¹® Ã³¸®
-				XSSFRow row = sheet.getRow(i);//¿­ ÇÏ³ª ¾ò±â 
-				for(int a=0; a<row.getPhysicalNumberOfCells(); a++) {
-					XSSFCell cell = row.getCell(a); //¿­ ÇÏ³ª¿¡ Á¢±Ù
+			//ì´ì¤‘ ë°˜ë³µë¬¸ì˜ íšŸìˆ˜ë¥¼ êµ¬í•˜ê¸° 
+			int rowCount=sheet.getPhysicalNumberOfRows();
+			
+			for(int i=1;i<rowCount;i++) {
+				Product product = new Product(); //í……ë¹ˆ VO ì¤€ë¹„í•˜ê¸°..(ì±„ì›Œë„£ê¸° ìœ„í•¨)
+				//ì»¬ëŸ¼ìˆ˜ë§Œí¼ ë°˜ë³µë¬¸ ì²˜ë¦¬
+				XSSFRow row = sheet.getRow(i); //ì—´ í•˜ë‚˜ ì–»ê¸°
+				
+				for(int a=0;a<row.getPhysicalNumberOfCells();a++) {
+					XSSFCell cell = row.getCell(a); //ì…€í•˜ë‚˜ì— ì ‘ê·¼
 					
-					if(a==0) { //subcategory_id
+					if(a==0) {//subcategory_id
 						SubCategory subCategory = new SubCategory();
 						subCategory.setSubcategory_id((int)cell.getNumericCellValue());
 						product.setSubCategory(subCategory);
 					}else if(a==1) {//product_name
 						product.setProduct_name(cell.getStringCellValue());
-					}else if(a==2) {
-						product.setPrice((int)cell.getNumericCellValue());						
-					}else if(a==3) {
+					}else if(a==2) {//price
+						product.setPrice((int)cell.getNumericCellValue());
+					}else if(a==3) {//brand
 						product.setBrand(cell.getStringCellValue());
-					}else if(a==4) {//»ö»ó
-						String[] colors = cell.getStringCellValue().split(",");// ,±âÁØÀ¸·Î ½ºÇÃ¸´
+					}else if(a==4){//color 
+						String[] colors=cell.getStringCellValue().split(","); //ì ì„ ê¸°ì¤€ìœ¼ë¡œ ë‚˜ëˆ„ë©´, ìŠ¤íŠ¸ë§ ë°°ì—´ì´ë°˜í™˜!!
 						List colorList = new ArrayList();
-						for(String color : colors) {
+						for(String color :colors) {
 							Color obj = new Color();
-							obj.setPicker(color); //ÇÏ³ªÀÇ »ö»óVO¿¡ »ö»óÁ¤º¸ ´ëÀÔ
+							obj.setPicker(color);  //í•˜ë‚˜ì˜ ìƒ‰ìƒ voì— ìƒ‰ìƒì •ë³´ë¥¼ ëŒ€ì…
 							colorList.add(obj);
 						}
 						product.setColorList(colorList);
-					}
-					else if(a==6) {
+					}if(a==5) {//psize 
+						String[] psize=cell.getStringCellValue().split(",");
+						List psizeList = new ArrayList();
+						for(String size : psize) {
+							Psize obj = new Psize(); //empty vo
+							obj.setFit(size); //ì‚¬ì´ì¦ˆ ì •ë³´ ë„£ê¸°
+							psizeList.add(obj); //ë¦¬ìŠ¤íŠ¸ì— ë‹´ê¸°
+						}
+						product.setPsizeList(psizeList);
+					} if(a==6) {//detail
 						product.setDetail(cell.getStringCellValue());
+					}else if(a==7) {//filename
+						product.setFilename(cell.getStringCellValue());
 					}
 				}
-				//¿Ï¼ºµÈ »óÇ°À» ¸®½ºÆ®¿¡ ´ã±â
+				//ì™„ì„±ëœ ìƒí’ˆì„ ë¦¬ìŠ¤íŠ¸ì— ë‹´ì 
 				productList.add(product);
-			}			
+			}
 			
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
+		}finally {
 			if(fis!=null) {
 				try {
 					fis.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		}
-		
 		
 		return productList;
 	}

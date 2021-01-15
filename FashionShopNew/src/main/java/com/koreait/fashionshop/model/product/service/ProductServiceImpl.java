@@ -101,8 +101,7 @@ public class ProductServiceImpl implements ProductService{
 	}
 
 	@Override
-	public void update(Product product) {
-		// TODO Auto-generated method stub
+	public void update(Product product) {		
 		
 	}
 
