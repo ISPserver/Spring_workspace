@@ -28,15 +28,57 @@ function regist(){
 		}
 	});
 }
+
+//목록가져오기(페이지가 아닌, 데이터만 가져와야 하므로 비동기로 요청)
+function getList(){
+	$.ajax({
+		url:"/rest/member",
+		type:"GET",
+		success:function(responseData){//서버에 응답처리
+			printData(responseData);
+			
+		},
+		error:function(xhr,status,error){
+			console.log("에러 응답 데이터 받음 : xhr = ", xhr);
+			alert(xhr.responseJSON.msg);
+		}
+	});
+}
+
+//list-area 영역에 서버로부터 받은 제이슨 데이터 출력 예정
+function printData(responseData){	
+	var tag="<table border=\"1px\">";
+	tag+="<tr>";
+	tag+="<td>ID</td>";
+	tag+="<td>Pass</td>";
+	tag+="<td>Name</td>";
+	tag+="</tr>";
+	for(var i=0; i<responseData.length; i++){
+		var json = responseData[i];
+		tag+="<tr>";
+		tag+="<td>"+json.m_id+"</td>";
+		tag+="<td>"+json.m_pass+"</td>";
+		tag+="<td>"+json.m_name+"</td>";
+		tag+="</tr>";
+	}
+	tag+="</table>";
+
+	$("#list-area").html(tag);
+}
+
+
 </script>
 </head>
 <body>
-<form>
-	<input type="text" id="m_id" 		placeholder="아이디 입력">
-	<input type="text" id="m_pass" 	placeholder="패스워드 입력">
-	<input type="text" id="m_name" 	placeholder="이름 입력">
-	
-	<button type="button" onclick="regist()">전송</button>
-</form>
+	<form>
+		<input type="text" id="m_id" 		placeholder="아이디 입력">
+		<input type="text" id="m_pass" 	placeholder="패스워드 입력">
+		<input type="text" id="m_name" 	placeholder="이름 입력">		
+	</form>
+		<button type="button" onclick="regist()">등록하기</button>
+		<button type="button" onclick="getList()">목록보기</button>
+		<div id="list-area">
+			
+		</div>
 </body>
 </html>

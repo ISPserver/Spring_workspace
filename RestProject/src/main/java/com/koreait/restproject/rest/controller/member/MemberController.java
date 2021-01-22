@@ -1,11 +1,12 @@
 package com.koreait.restproject.rest.controller.member;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.koreait.restproject.model.domain.Member;
@@ -19,11 +20,14 @@ public class MemberController {
 	@Autowired
 	private MemberService memberService;
 	
-	@GetMapping("/member")
-	@ResponseBody
-	public String getList() {
-		log.debug("리스트 요청");
-		return "Hello";
+	//jsp 페이지가 아닌, 데이터 전송
+	@GetMapping("/member")	
+	public ResponseEntity<List<Member>> getList() {
+		log.debug("Rest 리스트 요청");
+		List memberList = memberService.selectAll();
+		
+		ResponseEntity entity = ResponseEntity.ok().body(memberList);
+		return entity; //jackson converter때문에 json으로 자동변환해줌
 	}	
 	
 	@PostMapping("/member")
