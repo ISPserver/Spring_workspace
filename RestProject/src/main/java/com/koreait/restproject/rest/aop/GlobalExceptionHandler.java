@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.koreait.restproject.exception.BoardUpdateException;
 import com.koreait.restproject.exception.MemberListException;
 import com.koreait.restproject.message.Message;
 
@@ -34,5 +35,13 @@ public class GlobalExceptionHandler {
 		return entity;
 	}
 	
+	//게시판 관련 예외처리
+	@ExceptionHandler(BoardUpdateException.class)
+	public  ResponseEntity<Message> handleException(BoardUpdateException e){
+		Message message = new Message();
+		message.setMsg(e.getMessage());//에러 메시지 저장
+		ResponseEntity entity = new ResponseEntity(message,HttpStatus.INTERNAL_SERVER_ERROR);
+		return entity;
+	}
 	
 }
